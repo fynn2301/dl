@@ -58,7 +58,7 @@ class FullyConnected(BaseLayer):
         output_tensor = input_tensor_bias.dot(self.weights)
         
         # safe the input for backward later
-        self.input_tensor = input_tensor
+        self.input_tensor_bias = input_tensor_bias
         return output_tensor
 
 
@@ -66,20 +66,19 @@ class FullyConnected(BaseLayer):
         """This function calculates the error tensor for the prvious layer
 
         Args:
-            error_tensor (np.ndarray): error tensor of the successor layer
+            error_tensor (np.ndarray): error tensor[neuron_count x batch_size] of the successor layer
 
         Returns:
             np.ndarray: _description_
         """
         # calculate the error tensor of the previous layer
-        error_tensor_0 = error_tensor.dot(self.weights[:-1,:].T)
+        error_tensor_0 = error_tensor.dot(self.weights.T)
         
         # calculate the gradient tensor of the wights
-        gradient_tensor_weights = self.input_tensor.T.dot(error_tensor)
-        gradient_tensor_biases = np.mean(error_tensor, 0)
+        gradient_tensor = self.input_tensor_bias.T.dot(error_tensor)
         
-        gradient_tensor = np.r_[gradient_tensor_weights, [gradient_tensor_biases]]
         self.gradient_weights = gradient_tensor
         if self.optimizer != None:
             self.weights = self.optimizer.calculate_update(self.weights, gradient_tensor)
+        error_tensor_0 = error_tensor_0[:,:-1]
         return error_tensor_0

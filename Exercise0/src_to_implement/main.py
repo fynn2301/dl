@@ -6,7 +6,13 @@ from pattern import Circle
 from pattern import Spectrum
 from generator import ImageGenerator
 
-file_path = './exercise_data'
+file_path ='./exercise_data'
 label_path = './Labels.json'
 
 
+
+
+gen = ImageGenerator(file_path, label_path, 20, (32,32,3), False, False, False)
+
+gen.next()
+gen.show()

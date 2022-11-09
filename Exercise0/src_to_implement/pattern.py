@@ -117,18 +117,6 @@ class Spectrum():
         Returns:
             np.ndarray: the created array
         """
-        '''
-        a = np.arange(self.resolution)  
-        b = np.arange(self.resolution)  
-        x, y = np.meshgrid(a, b, sparse=True)
-        array = np.zeros((self.resolution, self.resolution, 3))
-        
-        array[:,:,0] = x / self.resolution 
-        array[:,:,1] = y / self.resolution
-        array[:,:,2] = (self.resolution - x) / self.resolution 
-        self.output = array
-        return copy.copy(array)
-        '''
         spectrum = np.zeros((self.resolution, self.resolution, 3))
         spectrum[:, :, 0] = np.linspace(0.0, 1.0, self.resolution)
         spectrum[:, :, 1] = np.linspace(0.0, 1.0, self.resolution)[np.newaxis].T
