@@ -9,11 +9,10 @@ class NeuralNetwork():
         self.loss_layer = None
         
         self.loss = []
-        
         self.label_tensor = []
         self.prdiction_tensor = []
         
-    def forward(self) -> np.array:
+    def  forward(self) -> np.array:
         """Forwarding the input of the network through every layer
 
         Returns:
@@ -39,7 +38,7 @@ class NeuralNetwork():
         Returns:
             np.array: _description_
         """
-        error_tensor = self.loss_layer.backward(self.label_tensor, self.prediction_tensor)
+        error_tensor = self.loss_layer.backward(self.label_tensor)
         
         for layer in reversed(self.layers):
             error_tensor = layer.backward(error_tensor)
@@ -63,9 +62,9 @@ class NeuralNetwork():
         Args:
             iterations (int): _description_
         """
-        for i in range(iterations):
+        for _ in range(iterations):
             self.forward()
-            loss = self.backward()
+            self.backward()
         
     def test(self, input_tensor: np.array) -> np.array:
         """Test the network performance for thr input tensor
@@ -76,4 +75,7 @@ class NeuralNetwork():
         Returns:
             np.array: _description_
         """
-        return self.forward()
+        # all layers till the loss layer
+        for layer in self.layers:
+            input_tensor = layer.forward(input_tensor)
+        return input_tensor
