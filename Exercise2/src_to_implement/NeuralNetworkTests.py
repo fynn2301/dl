@@ -566,6 +566,7 @@ class TestConv(unittest.TestCase):
         input_tensor = np.array(range(self.input_size * self.batch_size), dtype=float)
         input_tensor = input_tensor.reshape(self.batch_size, *self.input_shape)
         output_tensor = conv.forward(input_tensor)
+        a = (self.batch_size, self.num_kernels, *self.input_shape[1:])
         self.assertEqual(output_tensor.shape, (self.batch_size, self.num_kernels, *self.input_shape[1:]))
         error_tensor = conv.backward(output_tensor)
         self.assertEqual(error_tensor.shape, (self.batch_size, *self.input_shape))
