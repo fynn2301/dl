@@ -18,6 +18,7 @@ class CrossEntropyLoss():
         # safe the prediction tensor for backward
         self.last_prediction = prediction_tensor
         
+        '''
         # get the indecies for the loss values
         indices_rows_array = np.arange(label_tensor.shape[0])
         label_indices_array = np.argmax(label_tensor, axis=1)
@@ -29,6 +30,14 @@ class CrossEntropyLoss():
         
         # calculate the loss
         loss = np.sum(-np.log(prediction_values))
+        '''
+        # get the indecies for the loss values (True: include, False: don't)
+        label_index_array = np.where(label_tensor == 1, True, False)
+        # get the values of the index 
+        prediction_tensor_filtered = prediction_tensor[label_index_array]
+        # calculate the loss
+        loss = np.sum(-np.log(prediction_tensor_filtered + np.finfo(float).eps))
+
         return loss
         
     def backward(self, label_tensor: np.array) -> np.array:
