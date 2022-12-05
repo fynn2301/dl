@@ -159,7 +159,7 @@ class Conv(BaseLayer):
                 for channel_num, channel in enumerate(batch):
                     for kernel_num in range(new_kernels.shape[0]):
                         error_tensor_prev[batch_num, kernel_num] += convolve1d(channel,
-                                                                              new_kernels[kernel_num, channel_num])
+                                                                              new_kernels[kernel_num, channel_num], mode='constant', cval=0.0)
 
             # Calculate the bias gradient
             self.gradient_bias = [np.sum(batch_error_tensor) for batch_error_tensor in error_tensor]
@@ -200,13 +200,15 @@ class Conv(BaseLayer):
             for batch_num, batch in enumerate(upsample_error_tensor):
                 for channel_num, channel in enumerate(batch):
                     for kernel_num in range(new_kernels.shape[0]):
-                        error_tensor_prev[batch_num, kernel_num] += convolve(channel, new_kernels[kernel_num, channel_num])
+                        error_tensor_prev[batch_num, kernel_num] += convolve(channel, new_kernels[kernel_num, channel_num], mode='constant', cval=0.0)
 
             # Calculate the bias gradient
             self.gradient_bias = [np.sum(b_error_tensor) for b_error_tensor in error_tensor]
 
-            # Calculate the weights gradient
-
+            # TODO Calculate the weights gradient (self.gradient_weights)
+            # TODO Loop over batch and channels
+            # TODO Correlate over input_tensor with error_tensor as kernel (/weights)
+            # TODO Cut the resulting output into the shape of the kernel (self.convolution_shape[1,2])
 
             # Optimize the weights and the bias, if optimizers are initialized
             if self._optimizer_weights is not None and self._optimizer_bias is not None:
