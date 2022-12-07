@@ -167,17 +167,17 @@ class Conv(BaseLayer):
                         error_tensor_prev[batch_num, kernel_num] += convolve1d(channel, new_kernels[kernel_num, channel_num], mode='constant', cval=0.0)
 
             # Calculate the bias gradient
-            self.gradient_bias = np.sum(error_tensor, axis=2)
+            self.gradient_bias = np.sum(error_tensor, (0,2))
             #print(self.gradient_bias)
-            self.gradient_bias = np.mean(self.gradient_bias, (0))
+            #self.gradient_bias = np.mean(self.gradient_bias, (0))
             #print(self.gradient_bias)
             self.gradient_weights = np.zeros((self.num_kernels, *self.convolution_shape))
 
             # calculate the bias
-            for error_batch, input_batch in zip(error_tensor, self.input_tensor):
+            for error_batch, input_batch in zip(upsample_error_tensor, self.input_tensor):
                 for kernel_num, error_kernel in enumerate(error_batch):
                     for chanel_num, input_chanel in enumerate(input_batch):
-                        padded_gradient = convolve1d(input_chanel, error_kernel, mode="constant", cval=0)
+                        padded_gradient = correlate1d(input_chanel, error_kernel, mode="constant", cval=0)
 
                         gradient_y_size = self.convolution_shape[1]
                         input_y_size = input_chanel.shape[0]
@@ -225,16 +225,16 @@ class Conv(BaseLayer):
                         error_tensor_prev[batch_num, kernel_num] += convolve(channel, new_kernels[kernel_num, channel_num], mode='constant', cval=0.0)
 
             # Calculate the bias gradient
-            self.gradient_bias = np.sum(error_tensor, (2, 3))
-            self.gradient_bias = np.mean(self.gradient_bias, (0))
+            self.gradient_bias = np.sum(error_tensor, (0, 2, 3))
+            #self.gradient_bias = np.mean(self.gradient_bias, (0))
             #self.gradient_bias = np.reshape(self.gradient_bias, (self.num_kernels, 1))
             self.gradient_weights = np.zeros((self.num_kernels, *self.convolution_shape))
 
             # calculate the bias
-            for error_batch, input_batch in zip(error_tensor, self.input_tensor):
+            for error_batch, input_batch in zip(upsample_error_tensor, self.input_tensor):
                 for kernel_num, error_kernel in enumerate(error_batch):
                     for chanel_num, input_chanel in enumerate(input_batch):
-                        padded_gradient = convolve(input_chanel, error_kernel, mode="constant", cval=0)
+                        padded_gradient = correlate(input_chanel, error_kernel, mode="constant", cval=0)
 
                         gradient_y_size = self.convolution_shape[1]
                         gradient_x_size = self.convolution_shape[2]
@@ -249,14 +249,11 @@ class Conv(BaseLayer):
 
                         gradient = padded_gradient[cutoff_y_top:-cutoff_y_bot, cutoff_x_left:-cutoff_x_right]
                         self.gradient_weights[kernel_num, chanel_num, :, :] += gradient
-            self
 
             # Optimize the weights and the bias, if optimizers are initialized
             if self._optimizer_weights is not None and self._optimizer_bias is not None:
                 # Update bias
-                print("This is the bias before", self.bias)
                 self.bias = self._optimizer_bias.calculate_update(self.bias, self.gradient_bias)
-                print("This is the bias after", self.bias)
 
                 # Update weights
                 self.weights = self._optimizer_weights.calculate_update(self.weights, self.gradient_weights)
