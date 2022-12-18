@@ -1010,7 +1010,7 @@ class TestDropout(unittest.TestCase):
     def test_backward(self):
         drop_layer = Dropout.Dropout(0.5)
         drop_layer.forward(self.input_tensor)
-        output = drop_layer.backward(self.input_tensor)
+        output = drop_layer.backward(self.input_tensor) 
         self.assertEqual(np.max(output), 2)
         self.assertEqual(np.min(output), 0)
 
