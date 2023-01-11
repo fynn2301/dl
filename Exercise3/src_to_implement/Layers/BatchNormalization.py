@@ -18,7 +18,8 @@ class BatchNormalization(BaseLayer):
         self._optimizer_weights = None
         self._optimizer_bias = None
   
-        self.initialize()
+        self.weights = np.ones((self.chanels))
+        self.bias = np.zeros((self.chanels))
         
     @property
     def optimizer(self):
@@ -34,7 +35,7 @@ class BatchNormalization(BaseLayer):
         del self._optimizer_bias
         del self._optimizer_weights    
 
-    def initialize(self) -> None:
+    def initialize(self, weights_initializer, bias_initializer) -> None:
         """Initialize the bias and weights
         """
         self.weights = np.ones((self.chanels))
@@ -49,11 +50,11 @@ class BatchNormalization(BaseLayer):
         Returns:
             np.array: output
         """
+        self.shape = input_tensor.shape
         finfo = np.finfo(float)
         # if the input comes as an image it neads to be flattened
         reverse = False
         
-        self.shape = input_tensor.shape
         if len(input_tensor.shape) == 4:
             reverse = True
             input_tensor = self.reformat(input_tensor)

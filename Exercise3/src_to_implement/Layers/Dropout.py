@@ -25,7 +25,7 @@ class Dropout(BaseLayer):
             return input_tensor
         
         uniform_dist = np.random.uniform(size=input_tensor.shape)
-        output_factor = np.where(uniform_dist < 0.25, 1, 0)
+        output_factor = np.where(uniform_dist < self.propability, 1, 0)
         
         self.last_output_factor = output_factor
         

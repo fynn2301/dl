@@ -20,6 +20,7 @@ class FullyConnected(BaseLayer):
         
         # the layer should be trainable
         self.trainable = True
+        self.gradient_weights = None
         
         # init the weights
         self.weights = np.random.rand(self.input_size + 1, self.output_size)
