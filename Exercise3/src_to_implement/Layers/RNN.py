@@ -22,9 +22,15 @@ class RNN(BaseLayer):
         
         self.sub_layers = []
         
-        self._optimizer = None
+        self._optimizer0 = None
+        self._optimizer1 = None
+        
         self._memorize = False
         self.iteration = 0
+        
+        #gradients weights
+        self._gradient_weights0 = None
+        self._gradient_weights1 = None
          
         # sub layers
         self.fullyconnected_0 = FullyConnected.FullyConnected(input_size+hidden_size, hidden_size)
@@ -54,21 +60,21 @@ class RNN(BaseLayer):
         
     @property
     def gradient_weights(self):
-        return self.fullyconnected_0.gradient_weights
+        return self._gradient_weights0
     
     @property
     def optimizer(self):
-        return self._optimizer
+        return self._optimizer0
 
     @optimizer.setter
     def optimizer(self, value):
-        self._optimizer = copy.deepcopy(value)
-        self.fullyconnected_0.optimizer = value
-        self.fullyconnected_1.optimizer = value
+        self._optimizer0 = copy.deepcopy(value)
+        self._optimizer1 = copy.deepcopy(value)
 
     @optimizer.deleter
     def optimizer(self):
-        del self._optimizer
+        del self._optimizer0
+        del self._optimizer1
         
     @property
     def weights(self):
@@ -160,6 +166,20 @@ class RNN(BaseLayer):
             # save the hidden variables and the new error tensor
             self.hidden_variable_backwards = new_error_tensor_batch[0][self.input_size:]
             new_error_tensor[batch_size - i - 1,:] = new_error_tensor_batch[0][:self.input_size]
+            
+            #saving the gradient
+            if i == 0:
+                self._gradient_weights0 = self.fullyconnected_0.gradient_weights
+                self._gradient_weights1 = self.fullyconnected_1.gradient_weights
+            else:
+                self._gradient_weights0 += self.fullyconnected_0.gradient_weights
+                self._gradient_weights1 += self.fullyconnected_1.gradient_weights
+            
+        # update gradient
+        if self._optimizer0 != None:
+            self.fullyconnected_0.weights = self._optimizer0.calculate_update(self.fullyconnected_0.weights, self._gradient_weights0)
+            self.fullyconnected_1.weights = self._optimizer1.calculate_update(self.fullyconnected_1.weights, self._gradient_weights1)
+        
         return new_error_tensor
             
             
