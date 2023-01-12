@@ -44,7 +44,8 @@ class NeuralNetwork():
             
             # sumup regularization loss
             if self.optimizer.regularizer != None:
-                regularization_loss += self.optimizer.regularizer.norm(layer.weights)
+                if hasattr(layer, 'weights'):
+                    regularization_loss += self.optimizer.regularizer.norm(layer.weights)
             
         self.prediction_tensor = input_tensor
         
@@ -103,5 +104,9 @@ class NeuralNetwork():
         """
         # all layers till the loss layer
         for layer in self.layers:
+            
+            if hasattr(layer, 'testing_phase'):
+                layer.testing_phase = True
+                
             input_tensor = layer.forward(input_tensor)
         return input_tensor
