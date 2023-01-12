@@ -33,9 +33,11 @@ class RNN(BaseLayer):
         self.sigmoid = Sigmoid.Sigmoid()
         
         # hidden variable stack
+        self.hidden_variable_forward = np.zeros((hidden_size))
+        self.hidden_variable_backwards = np.zeros((hidden_size))
         
-        self.hidden_variable_list = []
-        self.hidden_variable_list.append(np.zeros((self.hidden_size)))
+        # save the activations and input tensors and similar in a stack for the backwards pass
+        self.input_state_stack = []
             
     @property
     def memorize(self):
@@ -96,27 +98,29 @@ class RNN(BaseLayer):
             np.array: output
         """
         if not self.memorize:
-            self.hidden_variable_list = []
-            self.hidden_variable_list.append(np.zeros((self.hidden_size)))
+            self.hidden_variable_forward = np.zeros((self.hidden_size))
         
         output_tensor = np.zeros((input_tensor.shape[0], self.output_size))
         
         for i, batch_tensor in enumerate(input_tensor):
             # get the input for the tan h layer
-            x_tilde = np.concatenate((batch_tensor, self.hidden_variable_list[i + self.iteration*input_tensor.shape[0]]))
+            x_tilde = np.concatenate((batch_tensor, self.hidden_variable_forward))
             x_tilde = np.expand_dims(x_tilde, axis=0)
             tan_h_input_tensor = self.fullyconnected_0.forward(x_tilde)
             
             # get the next hidden variable
-            new_hidden_variable = self.tan_h.forward(tan_h_input_tensor)
-            self.hidden_variable_list.append(new_hidden_variable[0])
+            new_hidden_variable_forward = self.tan_h.forward(tan_h_input_tensor)
+            self.hidden_variable_forward = new_hidden_variable_forward[0]
             
             # get the output
-            sigmoid_input_tensor = self.fullyconnected_1.forward(new_hidden_variable)
+            sigmoid_input_tensor = self.fullyconnected_1.forward(new_hidden_variable_forward)
             output_tensor[i,:] = self.sigmoid.forward(sigmoid_input_tensor)
             
-        if self.memorize:
-            self.iteration += 1
+            # save the forward pass info to use later
+            self.input_state_stack.append({"fullyconnected0": self.fullyconnected_0.input_tensor_bias,
+                                           "tanh": self.tan_h.activations, 
+                                           "fullyconnected1": self.fullyconnected_1.input_tensor_bias, 
+                                           "sigmoid": self.sigmoid.activations})
         return output_tensor
     
     def backward(self, error_tensor) -> np.array:
@@ -129,24 +133,32 @@ class RNN(BaseLayer):
             np.array: _description_
         """
         batch_size = error_tensor.shape[0]
-        hidden_error_tensor = np.zeros((self.hidden_size))
+        if not self.memorize:
+            self.hidden_variable_backwards = np.zeros((self.hidden_size))
         
         new_error_tensor = np.zeros((batch_size, self.input_size))
         
         for i, error_batch_tensor in enumerate(error_tensor[::-1]):
+            # set the inputs before backwarding
+            inputs = self.input_state_stack[batch_size - i - 1]
+            self.fullyconnected_0.input_tensor_bias = inputs["fullyconnected0"]
+            self.fullyconnected_1.input_tensor_bias = inputs["fullyconnected1"]
+            self.tan_h.activations = inputs["tanh"]
+            self.sigmoid.activations = inputs["sigmoid"]
+            
             # run graph backwards
             sigmoid_back_out = self.sigmoid.backward(error_batch_tensor)
             tan_h_back_in = self.fullyconnected_1.backward(sigmoid_back_out)
             tan_h_back_in = tan_h_back_in[0]
             
             # add previous hidden error tensor and the backwards 
-            new_tan_h_back_in = np.add(tan_h_back_in, hidden_error_tensor)
+            new_tan_h_back_in = np.add(tan_h_back_in, self.hidden_variable_backwards)
             
             tan_h_back_out = self.tan_h.backward(new_tan_h_back_in)
             new_error_tensor_batch = self.fullyconnected_0.backward(tan_h_back_out)
             
             # save the hidden variables and the new error tensor
-            hidden_error_tensor = new_error_tensor_batch[0][self.input_size:]
+            self.hidden_variable_backwards = new_error_tensor_batch[0][self.input_size:]
             new_error_tensor[batch_size - i - 1,:] = new_error_tensor_batch[0][:self.input_size]
         return new_error_tensor
             
